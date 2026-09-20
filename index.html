@@ -1,0 +1,390 @@
+
+
+<!-- MathJax Configuration and Script -->
+<script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        },
+        svg: { fontCache: 'global' }
+    };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<!-- Interactive Chemistry Quiz Container -->
+<div id="chem-quiz-container">
+    <div class="quiz-header">
+        <h2>CBSE Grade 12 Chemistry Competency Quiz</h2>
+        <div id="quiz-progress">Question 1 of 50</div>
+    </div>
+
+    <div id="quiz-body">
+        <div id="question-text" class="question-text">Loading question...</div>
+        <div id="options-container" class="options-container"></div>
+    </div>
+
+    <div class="quiz-footer">
+        <button id="prev-btn" onclick="prevQuestion()" disabled>Previous</button>
+        <button id="next-btn" onclick="nextQuestion()">Next</button>
+        <button id="submit-btn" onclick="calculateScore()" style="display: none;">Submit Quiz</button>
+        <button id="restart-btn" onclick="restartQuiz()" style="display: none;">Retake Quiz</button>
+    </div>
+
+    <div id="score-board" class="score-board" style="display: none;"></div>
+</div>
+
+<style>
+    #chem-quiz-container {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        max-width: 850px;
+        margin: 20px auto;
+        padding: 25px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 1px solid #e0e0e0;
+    }
+    .quiz-header {
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .quiz-header h2 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.35rem;
+    }
+    #quiz-progress {
+        font-size: 0.95rem;
+        font-weight: bold;
+        color: #7f8c8d;
+    }
+    .question-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 18px;
+        line-height: 1.6;
+    }
+    .options-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .option-btn {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: #333;
+    }
+    .option-btn:hover {
+        background: #e3f2fd;
+        border-color: #90caf9;
+    }
+    .option-btn.selected {
+        background: #bbdefb;
+        border-color: #2196f3;
+        font-weight: bold;
+    }
+    .quiz-footer {
+        margin-top: 25px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    .quiz-footer button {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+        font-weight: bold;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        background: #3498db;
+        color: #fff;
+        transition: background 0.2s;
+    }
+    .quiz-footer button:hover:not(:disabled) {
+        background: #2980b9;
+    }
+    .quiz-footer button:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+    }
+    #submit-btn {
+        background: #27ae60 !important;
+    }
+    #submit-btn:hover {
+        background: #219150 !important;
+    }
+
+    /* Score and Review Styles */
+    .score-summary {
+        text-align: center;
+        padding: 20px;
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #2c3e50;
+        background: #e8f8f5;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border: 1px solid #a3e4d7;
+    }
+    .review-header-title {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 8px;
+        margin-bottom: 20px;
+    }
+    .review-card {
+        background: #fafafa;
+        border-left: 5px solid #bdc3c7;
+        padding: 15px 18px;
+        margin-bottom: 18px;
+        border-radius: 6px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .review-card.review-pass {
+        border-left-color: #2ecc71;
+    }
+    .review-card.review-fail {
+        border-left-color: #e74c3c;
+    }
+    .review-q-title {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    .review-ans-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.98rem;
+    }
+    .given-answer {
+        padding: 8px 12px;
+        border-radius: 6px;
+    }
+    .given-answer.correct-badge {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .given-answer.incorrect-badge {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    .correct-answer-text {
+        padding: 8px 12px;
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        border-radius: 6px;
+    }
+</style>
+
+<script>
+const quizData = [
+    { q: "1. Which of the following is a polysaccharide?", options: ["(A) Maltose", "(B) Glucose", "(C) Cellulose", "(D) Sucrose"], answer: 2 },
+    { q: "2. Which transition metal does not show variable oxidation states?", options: ["(A) $\\text{Cu}$", "(B) $\\text{Sc}$", "(C) $\\text{Ti}$", "(D) $\\text{Fe}$"], answer: 1 },
+    { q: "3. An azeotropic mixture of two liquids has a boiling point higher than that of either of the two liquids when it:", options: ["(A) obeys Raoult’s law", "(B) shows positive deviation from Raoult’s law", "(C) shows negative deviation from Raoult’s law", "(D) obeys Henry’s law"], answer: 2 },
+    { q: "4. Zinc is not regarded as a transition element because:", options: ["(A) it has high melting point", "(B) it has completely filled $3d$ orbitals in its ground state as well as in oxidized state", "(C) it shows variable oxidation states", "(D) it forms paramagnetic complexes"], answer: 1 },
+    { q: "5. Electrolysis of aqueous $\\text{NaCl}$ gives:", options: ["(A) $\\text{Na}$ at cathode and $\\text{O}_2$ at anode", "(B) $\\text{H}_2$ at cathode and $\\text{Cl}_2$ at anode", "(C) $\\text{Cl}_2$ at cathode and $\\text{H}_2$ at anode", "(D) $\\text{O}_2$ at cathode and $\\text{Na}$ at anode"], answer: 1 },
+    { q: "6. In the Haworth structure of $\\alpha$-D-glucopyranose, the anomeric carbon is numbered as:", options: ["(A) C1", "(B) C2", "(C) C3", "(D) C5"], answer: 0 },
+    { q: "7. The product of the oxidation of $\\text{I}^-$ with $\\text{MnO}_4^-$ in alkaline medium is:", options: ["(A) $\\text{IO}_4^-$", "(B) $\\text{I}_2$", "(C) $\\text{IO}^-$", "(D) $\\text{IO}_3^-$"], answer: 3 },
+    { q: "8. The role of a catalyst in a chemical reaction is to change:", options: ["(A) equilibrium constant", "(B) enthalpy of reaction", "(C) Gibbs energy of reaction", "(D) activation energy of reaction"], answer: 3 },
+    { q: "9. IUPAC name for $\\text{CH}_3\\text{--CH}_2\\text{--N(CH}_3\\text{)--CH}_2\\text{--CH}_2\\text{--CH}_3$ is:", options: ["(A) N-methylpentan-2-amine", "(B) N-ethyl-N-methylpropan-1-amine", "(C) N,N-diethylpropan-1-amine", "(D) N,N-dimethylpropan-1-amine"], answer: 1 },
+    { q: "10. In which group are both ions coloured in aqueous solution?", options: ["(A) $\\text{Cu}^+$ and $\\text{Ti}^{4+}$", "(B) $\\text{Ti}^{4+}$ and $\\text{Co}^{2+}$", "(C) $\\text{Co}^{2+}$ and $\\text{Fe}^{2+}$", "(D) $\\text{Cu}^+$ and $\\text{Fe}^{2+}$"], answer: 2 },
+    { q: "11. Williamson synthesis of preparing unsymmetrical ether proceeds via:", options: ["(A) $S_N1$ mechanism", "(B) $S_N2$ mechanism", "(C) Electrophilic addition", "(D) Elimination reaction"], answer: 1 },
+    { q: "12. Which haloalkane is hydrolysed by aqueous $\\text{KOH}$ most easily?", options: ["(A) $\\text{CH}_2=\\text{CH--Br}$", "(B) $\\text{CH}_3\\text{--CH}_2\\text{--Br}$", "(C) $\\text{CH}_3\\text{--CH(Br)--CH}_3$", "(D) $\\text{C}_6\\text{H}_5\\text{Br}$"], answer: 1 },
+    { q: "13. Which of the following cells converts the energy of combustion of fuels directly into electrical energy?", options: ["(A) Mercury cell", "(B) Fuel cell", "(C) Dry cell", "(D) Lead storage cell"], answer: 1 },
+    { q: "14. Which by-product is obtained in the commercial manufacture of phenol from cumene?", options: ["(A) Acetaldehyde", "(B) Acetone", "(C) Anisole", "(D) o-Cresol"], answer: 1 },
+    { q: "15. The freezing point of $1\\text{ molal}$ $\\text{KCl}$ solution ($K_f = 1.86\\text{ K kg mol}^{-1}$) assuming complete dissociation is:", options: ["(A) $-3.72^\\circ\\text{C}$", "(B) $+3.72^\\circ\\text{C}$", "(C) $-1.86^\\circ\\text{C}$", "(D) $+2.72^\\circ\\text{C}$"], answer: 0 },
+    { q: "16. Which $3d$-series transition metal has the highest melting point?", options: ["(A) Sc", "(B) Cr", "(C) Mn", "(D) Zn"], answer: 1 },
+    { q: "17. In the Arrhenius equation $k = A e^{-E_a/RT}$, the pre-exponential factor '$A$' represents:", options: ["(A) effective collisions", "(B) frequency factor", "(C) fraction of collisions", "(D) threshold energy"], answer: 1 },
+    { q: "18. $\\alpha$-D-glucose and $\\beta$-D-glucose differ from each other with respect to configuration at:", options: ["(A) C1 carbon", "(B) C2 carbon", "(C) C3 carbon", "(D) C4 carbon"], answer: 0 },
+    { q: "19. Which transition metal ion is colourless in aqueous solution?", options: ["(A) $\\text{Cu}^+$", "(B) $\\text{Ni}^{2+}$", "(C) $\\text{Co}^{2+}$", "(D) $\\text{V}^{3+}$"], answer: 0 },
+    { q: "20. Which aqueous solution will have the highest boiling point?", options: ["(A) 1% $\\text{KCl}$", "(B) 1% glucose", "(C) 1% urea", "(D) 1% $\\text{CaCl}_2$"], answer: 3 },
+    { q: "21. Outermost electronic configuration exhibiting the highest oxidation state in $3d$-series is:", options: ["(A) $3d^6 4s^2$", "(B) $3d^5 4s^1$", "(C) $3d^5 4s^2$", "(D) $3d^3 4s^2$"], answer: 2 },
+    { q: "22. Unit of rate constant ($k$) for a zero-order reaction is:", options: ["(A) $\\text{s}^{-1}$", "(B) $\\text{mol L}^{-1}$", "(C) $\\text{mol L}^{-1}\\text{s}^{-1}$", "(D) $\\text{L mol}^{-1}\\text{s}^{-1}$"], answer: 2 },
+    { q: "23. Effect of $\\text{V}_2\\text{O}_5$ catalyst on equilibrium of $2\\text{SO}_2 + \\text{O}_2 \\rightleftharpoons 2\\text{SO}_3$ is to:", options: ["(A) speed up the forward reaction rate", "(B) slow down the reverse reaction", "(C) increase $K_p$", "(D) increase yield of $\\text{SO}_3$ at equilibrium"], answer: 0 },
+    { q: "24. Which interhalogen species is more reactive than iodine molecule ($\\text{I}_2$)?", options: ["(A) $\\text{ICl}$", "(B) $\\text{N}_2$", "(C) $\\text{O}_2$", "(D) $\\text{He}$"], answer: 0 },
+    { q: "25. Which among the oxoacids of chlorine is the strongest acid?", options: ["(A) $\\text{HOCl}$", "(B) $\\text{HClO}_2$", "(C) $\\text{HClO}_3$", "(D) $\\text{HClO}_4$"], answer: 3 },
+    { q: "26. Why is the boiling point of $\\text{HI}$ higher than that of $\\text{HBr}$?", options: ["(A) $\\text{HI}$ forms hydrogen bonds", "(B) $\\text{HI}$ has larger molecular size and stronger London dispersion forces", "(C) $\\text{HBr}$ is ionic", "(D) $\\text{HI}$ has smaller mass"], answer: 1 },
+    { q: "27. Chlorine gas reacting with cold and dilute $\\text{NaOH}$ gives:", options: ["(A) $\\text{NaCl} + \\text{NaClO}_3 + \\text{H}_2\\text{O}$", "(B) $\\text{NaCl} + \\text{NaOCl} + \\text{H}_2\\text{O}$", "(C) $\\text{NaClO}_2 + \\text{H}_2\\text{O}$", "(D) $\\text{Cl}_2\\text{O} + \\text{H}_2\\text{O}$"], answer: 1 },
+    { q: "28. Precipitates of $\\text{AgCl}$ and $\\text{AgBr}$ dissolve in aqueous ammonia forming:", options: ["(A) $[\\text{Ag}(\\text{NH}_3)_2]^+$", "(B) $[\\text{Ag}(\\text{NH}_3)_4]^{2+}$", "(C) $\\text{AgNO}_3$", "(D) $\\text{Ag}_2\\text{O}$"], answer: 0 },
+    { q: "29. In which oxometal anion does metal NOT show an oxidation state equal to its group number?", options: ["(A) $\\text{CrO}_4^{2-}$", "(B) $\\text{MnO}_4^-$", "(C) $\\text{Cr}_2\\text{O}_7^{2-}$", "(D) $\\text{MnO}_4^{2-}$"], answer: 3 },
+    { q: "30. When yellow potassium chromate solution is acidified with hydrochloric acid, its colour changes to:", options: ["(A) Green", "(B) Orange", "(C) Blue", "(D) Red"], answer: 1 },
+    { q: "31. Coinage metal X with positive reduction potential reacting with $\\text{HNO}_3$ but not $\\text{HCl}$ is:", options: ["(A) Zinc", "(B) Iron", "(C) Copper", "(D) Chromium"], answer: 2 },
+    { q: "32. Reagent giving white precipitate when added to $[\\text{Co}(\\text{NH}_3)_5\\text{Cl}]\\text{SO}_4$ solution is:", options: ["(A) $\\text{AgCl}$", "(B) $\\text{AgNO}_3$", "(C) $\\text{BaSO}_4$", "(D) $\\text{BaCl}_2$"], answer: 3 },
+    { q: "33. Number of ions produced when $1\\text{ mole}$ of $[\\text{Cr}(\\text{en})_3]\\text{Cl}_3$ dissolves in water:", options: ["(A) 2", "(B) 4", "(C) 7", "(D) 10"], answer: 1 },
+    { q: "34. Which coordination complex ion is diamagnetic and has octahedral geometry?", options: ["(A) $[\\text{MnCl}_6]^{3-}$", "(B) $[\\text{Ni}(\\text{CN})_4]^{2-}$", "(C) $[\\text{Fe}(\\text{CN})_6]^{4-}$", "(D) $[\\text{CuCl}_4]^{2-}$"], answer: 2 },
+    { q: "35. Mohr's salt solution turns blood red with $\\text{KSCN}$ because:", options: ["(A) Mohr's salt is a complex ion", "(B) Mohr's salt is a double salt and completely dissociates into free iron ions", "(C) Mohr's salt does not ionize", "(D) $\\text{KSCN}$ precipitates sulfate"], answer: 1 },
+    { q: "36. Major product formed when $\\text{CH}_3\\text{--CH}_2\\text{--CH=CH}_2$ reacts with $\\text{HBr}$ is:", options: ["(A) 1-bromobutane", "(B) 2-bromobutane", "(C) 1,2-dibromobutane", "(D) 2-methylbromopropane"], answer: 1 },
+    { q: "37. Which haloalkane exhibits optical isomerism?", options: ["(A) 3-iodopentane", "(B) 2-iodo-2-methylpropane", "(C) 1,3-diiodopropane", "(D) 2-iodobutane"], answer: 3 },
+    { q: "38. Which compound undergoes $S_N1$ hydrolysis by aqueous $\\text{KOH}$ most rapidly?", options: ["(A) 1-chlorobutane", "(B) 2-chlorobutane", "(C) 2-chloro-2-methylpropane", "(D) chlorobenzene"], answer: 2 },
+    { q: "39. Electrophile involved in Reimer-Tiemann reaction of phenol is:", options: ["(A) $:\\text{CCl}_3^-$", "(B) $:\\text{CCl}_2$", "(C) $^+\\text{CHO}$", "(D) $^+\\text{CHCl}_2$"], answer: 1 },
+    { q: "40. p-Nitrophenol has a higher boiling point than o-nitrophenol due to:", options: ["(A) intramolecular hydrogen bonding", "(B) intermolecular hydrogen bonding", "(C) lower molar mass", "(D) non-polar nature"], answer: 1 },
+    { q: "41. Non-stoichiometric oxide $\\text{Fe}_{0.94}\\text{O}$ is formed when $\\text{Fe}^{2+}$ ions are replaced by:", options: ["(A) $\\text{Fe}^{3+}$ ions", "(B) $\\text{O}^{2-}$ ions", "(C) $\\text{Zn}^{2+}$ ions", "(D) $\\text{Na}^+$ ions"], answer: 0 },
+    { q: "42. Dissolving $5\\text{ g}$ of a basic solute to make $500\\text{ mL}$ of $0.25\\text{ M}$ solution corresponds to:", options: ["(A) $\\text{Ca(OH)}_2$", "(B) $\\text{NaOH}$", "(C) $\\text{LiOH}$", "(D) $\\text{CsOH}$"], answer: 1 },
+    { q: "43. Mixture of acetone and chloroform shows negative deviation from Raoult's law due to:", options: ["(A) weaker solute-solvent interactions", "(B) stronger solute-solvent hydrogen bonding interactions", "(C) volume expansion", "(D) positive enthalpy of mixing"], answer: 1 },
+    { q: "44. On dilution, molar conductivity ($\\Lambda_m$) increases steeply for:", options: ["(A) $\\text{KCl}$", "(B) $\\text{NaCl}$", "(C) $\\text{CH}_3\\text{COOH}$", "(D) $\\text{KNO}_3$"], answer: 2 },
+    { q: "45. Oxo-acid of nitrogen formed when $\\text{N}_2\\text{O}_3$ reacts with water is:", options: ["(A) $\\text{HNO}_3$", "(B) $\\text{HNO}_2$", "(C) $\\text{HNO}_4$", "(D) $\\text{H}_2\\text{N}_2\\text{O}_2$"], answer: 1 },
+    { q: "46. Among halide ions, the strongest reducing agent is:", options: ["(A) $\\text{F}^-$", "(B) $\\text{Cl}^-$", "(C) $\\text{Br}^-$", "(D) $\\text{I}^-$"], answer: 3 },
+    { q: "47. DDT is an important polyhalogen compound used as a:", options: ["(A) greenhouse gas", "(B) fertilizer", "(C) biodegradable insecticide", "(D) non-biodegradable insecticide"], answer: 3 },
+    { q: "48. Electric charge required for reduction of $1\\text{ mole}$ of $\\text{MnO}_4^-$ to $\\text{Mn}^{2+}$ is:", options: ["(A) $1\\text{ F}$", "(B) $5\\text{ F}$", "(C) $4\\text{ F}$", "(D) $6\\text{ F}$"], answer: 1 },
+    { q: "49. Transition metals act as good catalysts primarily due to their ability to:", options: ["(A) form alloys", "(B) exhibit variable oxidation states and form reaction intermediates", "(C) conduct heat", "(D) absorb light"], answer: 1 },
+    { q: "50. Pentaamminechloridocobalt(III) sulfate yields a white precipitate with $\\text{BaCl}_2$ because:", options: ["(A) chloride is in the coordination sphere", "(B) sulfate ion is present in the ionization sphere", "(C) cobalt forms insoluble salt", "(D) ammonia is evolved"], answer: 1 },
+{ q: "1. In an electrochemical cell reaction: $2\\text{Cu}^+(\\text{aq}) + \\text{Zn}(\\text{s}) \\rightarrow 2\\text{Cu}(\\text{s}) + \\text{Zn}^{2+}(\\text{aq})$, $E^\\circ_{\\text{cell}} = 1.28\\text{ V}$. As the reaction progresses, what will happen to the overall voltage?", options: ["(A) Voltage will remain constant.", "(B) It will decrease as $[\\text{Zn}^{2+}]$ increases.", "(C) It will increase as $[\\text{Cu}^+]$ increases.", "(D) It will increase as $[\\text{Zn}^{2+}]$ increases."], answer: 1 },
+    { q: "2. Out of $\\text{Fe}^{3+}$, $\\text{Sc}^{3+}$, $\\text{Cr}^{3+}$, and $\\text{Co}^{3+}$ ions, the one which is colourless in aqueous solution is:", options: ["(A) $\\text{Sc}^{3+}$", "(B) $\\text{Fe}^{3+}$", "(C) $\\text{Cr}^{3+}$", "(D) $\\text{Co}^{3+}$"], answer: 0 },
+    { q: "3. The value of Henry’s constant $K_H$ is:", options: ["(A) greater for gases with higher solubility", "(B) greater for gases with lower solubility", "(C) constant for all gases", "(D) not related to solubility"], answer: 1 },
+    { q: "4. Which molecule is chiral in nature?", options: ["(A) 2-Bromobutane", "(B) 1-Bromobutane", "(C) 2-Bromopropane", "(D) 1-Bromopropane"], answer: 0 },
+    { q: "5. DDT is an important polyhalogen compound. It is a:", options: ["(A) greenhouse gas", "(B) fertilizer", "(C) biodegradable insecticide", "(D) non-biodegradable insecticide"], answer: 3 },
+    { q: "6. Electric charge required for the reduction of $1\\text{ mole}$ of $\\text{MnO}_4^-$ to $\\text{Mn}^{2+}$:", options: ["(A) $1\\text{ F}$", "(B) $5\\text{ F}$", "(C) $4\\text{ F}$", "(D) $6\\text{ F}$"], answer: 1 },
+    { q: "7. Alkenes are formed by heating alcohols with conc. $\\text{H}_2\\text{SO}_4$. The first step is:", options: ["(A) formation of carbocation", "(B) formation of ester", "(C) protonation of alcohol molecule", "(D) elimination of water"], answer: 2 },
+    { q: "8. Hoffmann Bromamide degradation reaction is given by:", options: ["(A) $\\text{CH}_3\\text{NO}_2$", "(B) $\\text{CH}_3\\text{NH}_2$", "(C) $\\text{CH}_3\\text{CONH}_2$", "(D) $\\text{CH}_3\\text{CH}_2\\text{NH}_2$"], answer: 2 },
+    { q: "9. Electric charge required for the oxidation of $1\\text{ mole}$ of $\\text{H}_2\\text{O}$ to $\\text{O}_2$:", options: ["(A) $1\\text{ F}$", "(B) $2\\text{ F}$", "(C) $3\\text{ F}$", "(D) $4\\text{ F}$"], answer: 1 },
+    { q: "10. Transition metals behave as catalysts due to:", options: ["(A) High melting point", "(B) High ionisation enthalpy", "(C) Alloy formation", "(D) Variable oxidation states"], answer: 3 },
+    { q: "11. Electric charge required for the oxidation of $1\\text{ mole}$ of $\\text{FeO}$ to $\\text{Fe}_2\\text{O}_3$:", options: ["(A) $1\\text{ F}$", "(B) $2\\text{ F}$", "(C) $3\\text{ F}$", "(D) $4\\text{ F}$"], answer: 0 },
+    { q: "12. The role of a catalyst is to change:", options: ["(A) equilibrium constant", "(B) enthalpy of reaction", "(C) Gibbs energy of reaction", "(D) activation energy ($E_a$) of reaction"], answer: 3 },
+    { q: "13. Which of the following molecules is chiral in nature?", options: ["(A) 1-chloropropane", "(B) 2-chloropropane", "(C) 1-chlorobutane", "(D) 2-chlorobutane"], answer: 3 },
+    { q: "14. $\\text{CH}_3\\text{CH}_2\\text{OH}$ can be converted to $\\text{CH}_3\\text{CHO}$ by:", options: ["(A) catalytic hydrogenation", "(B) treatment with $\\text{LiAlH}_4$", "(C) treatment with PCC", "(D) treatment with $\\text{KMnO}_4$"], answer: 2 },
+    { q: "15. IUPAC name for $\\text{CH}_3\\text{--CH}_2\\text{--N(CH}_3\\text{)--CH}_2\\text{--CH}_2\\text{--CH}_3$:", options: ["(A) N-methylpentan-2-amine", "(B) N-ethyl-N-methylpropan-1-amine", "(C) N,N-diethylpropan-1-amine", "(D) N,N-dimethylpropan-1-amine"], answer: 1 },
+    { q: "16. In which group are both ions coloured in aqueous solution?", options: ["(A) $\\text{Cu}^+$ and $\\text{Ti}^{4+}$", "(B) $\\text{Ti}^{4+}$ and $\\text{Co}^{2+}$", "(C) $\\text{Co}^{2+}$ and $\\text{Fe}^{2+}$", "(D) $\\text{Cu}^+$ and $\\text{Fe}^{2+}$"], answer: 2 },
+    { q: "17. $\\text{CH}_3\\text{CH}_2\\text{CHO}$ and $\\text{CH}_3\\text{CH}_2\\text{COOH}$ can be distinguished by:", options: ["(A) Sodium bicarbonate test", "(B) Hinsberg test", "(C) Iodoform test", "(D) Lucas test"], answer: 0 },
+    { q: "18. Williamson synthesis of unsymmetrical ether follows:", options: ["(A) $S_N1$ reaction", "(B) $S_N2$ reaction", "(C) Electrophilic addition", "(D) Elimination reaction"], answer: 1 },
+    { q: "19. By-product obtained in the manufacture of phenol from cumene:", options: ["(A) Acetaldehyde", "(B) Acetone", "(C) Anisole", "(D) o-Cresol"], answer: 1 },
+    { q: "20. Which complex shows linkage isomerism?", options: ["(A) $[\\text{Co}(\\text{NH}_3)_5\\text{Cl}]^{2+}$", "(B) $[\\text{Co}(\\text{NH}_3)_4\\text{Cl}_2]\\text{Br}_2$", "(C) $[\\text{Co}(\\text{H}_2\\text{O})_6]^{3+}$", "(D) $[\\text{Co}(\\text{NH}_3)_5(\\text{ONO})]^{2+}$"], answer: 3 },
+    { q: "21. Which transition metal has the highest melting point?", options: ["(A) Sc", "(B) Cr", "(C) Mn", "(D) Zn"], answer: 1 },
+    { q: "22. Freezing point of $1\\text{ molal}$ $\\text{KCl}$ solution ($K_f = 1.86\\text{ K kg mol}^{-1}$):", options: ["(A) $-3.72^\\circ\\text{C}$", "(B) $+3.72^\\circ\\text{C}$", "(C) $-1.86^\\circ\\text{C}$", "(D) $+2.72^\\circ\\text{C}$"], answer: 0 },
+    { q: "23. In Arrhenius equation $k = A e^{-E_a/RT}$, '$A$' represents:", options: ["(A) effective collisions", "(B) frequency factor", "(C) fraction of collisions", "(D) threshold energy"], answer: 1 },
+    { q: "24. $\\alpha$-D-glucose and $\\beta$-D-glucose differ with respect to:", options: ["(A) size of ring", "(B) configuration at C2", "(C) number of $-\\text{OH}$ groups", "(D) configuration at C1 carbon"], answer: 3 },
+    { q: "25. Which transition metal ion is NOT coloured in aqueous solution?", options: ["(A) $\\text{Cu}^+$", "(B) $\\text{Ni}^{2+}$", "(C) $\\text{Co}^{2+}$", "(D) $\\text{V}^{3+}$"], answer: 0 },
+    { q: "26. Solution with the highest boiling point in water:", options: ["(A) 1% $\\text{KCl}$", "(B) 1% glucose", "(C) 1% urea", "(D) 1% $\\text{CaCl}_2$"], answer: 3 },
+    { q: "27. Electronic configuration showing the highest oxidation state:", options: ["(A) $3d^6 4s^2$", "(B) $3d^5 4s^1$", "(C) $3d^5 4s^2$", "(D) $3d^3 4s^2$"], answer: 2 },
+    { q: "28. Reagent 'A' giving white ppt with Pentaamminechloridocobalt(III) sulfate:", options: ["(A) $\\text{AgCl}$", "(B) $\\text{AgNO}_3$", "(C) $\\text{BaSO}_4$", "(D) $\\text{BaCl}_2$"], answer: 3 },
+    { q: "29. Number of ions produced by $[\\text{Cr}(\\text{en})_3]\\text{Cl}_3$ in water:", options: ["(A) 2", "(B) 4", "(C) 7", "(D) 10"], answer: 1 },
+    { q: "30. Charge required for reduction of $1\\text{ mole}$ of $\\text{MnO}_4^-$ to $\\text{MnO}_2$:", options: ["(A) $1\\text{ F}$", "(B) $3\\text{ F}$", "(C) $5\\text{ F}$", "(D) $6\\text{ F}$"], answer: 1 },
+    { q: "31. Alkyl halides undergoing $S_N2$ reaction involve:", options: ["(A) retention of configuration", "(B) formation of racemic mixture", "(C) inversion of configuration", "(D) carbocation formation"], answer: 2 }
+
+];
+
+let currentQ = 0;
+let userAnswers = new Array(quizData.length).fill(null);
+
+function loadQuestion() {
+    const item = quizData[currentQ];
+    document.getElementById("quiz-progress").innerText = `Question ${currentQ + 1} of ${quizData.length}`;
+    document.getElementById("question-text").innerHTML = item.q;
+    
+    const container = document.getElementById("options-container");
+    container.innerHTML = "";
+    
+    item.options.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        if (userAnswers[currentQ] === idx) btn.classList.add("selected");
+        btn.innerHTML = opt;
+        btn.onclick = () => selectOption(idx);
+        container.appendChild(btn);
+    });
+
+    document.getElementById("prev-btn").disabled = currentQ === 0;
+    if (currentQ === quizData.length - 1) {
+        document.getElementById("next-btn").style.display = "none";
+        document.getElementById("submit-btn").style.display = "inline-block";
+    } else {
+        document.getElementById("next-btn").style.display = "inline-block";
+        document.getElementById("submit-btn").style.display = "none";
+    }
+
+    if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([document.getElementById("chem-quiz-container")]);
+    }
+}
+
+function selectOption(idx) {
+    userAnswers[currentQ] = idx;
+    loadQuestion();
+}
+
+function nextQuestion() {
+    if (currentQ < quizData.length - 1) {
+        currentQ++;
+        loadQuestion();
+    }
+}
+
+function prevQuestion() {
+    if (currentQ > 0) {
+        currentQ--;
+        loadQuestion();
+    }
+}
+
+function calculateScore() {
+    let score = 0;
+    let reviewHtml = "<h3 class='review-header-title'>Detailed Question Review</h3>";
+
+    quizData.forEach((item, idx) => {
+        const userChoiceIdx = userAnswers[idx];
+        const isCorrect = userChoiceIdx === item.answer;
+        if (isCorrect) score++;
+
+        const userChoiceText = userChoiceIdx !== null ? item.options[userChoiceIdx] : "<em>Not Attempted</em>";
+        const correctChoiceText = item.options[item.answer];
+
+        reviewHtml += `
+            <div class="review-card ${isCorrect ? 'review-pass' : 'review-fail'}">
+                <div class="review-q-title">${item.q}</div>
+                <div class="review-ans-group">
+                    <div class="given-answer ${isCorrect ? 'correct-badge' : 'incorrect-badge'}">
+                        <strong>Your Answer:</strong> ${userChoiceText} ${isCorrect ? '✓' : '✗'}
+                    </div>
+                    ${!isCorrect ? `<div class="correct-answer-text"><strong>Correct Answer:</strong> ${correctChoiceText}</div>` : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    document.getElementById("quiz-body").style.display = "none";
+    document.getElementById("prev-btn").style.display = "none";
+    document.getElementById("submit-btn").style.display = "none";
+    document.getElementById("restart-btn").style.display = "inline-block";
+
+    const scoreBoard = document.getElementById("score-board");
+    scoreBoard.style.display = "block";
+    scoreBoard.innerHTML = `
+        <div class="score-summary">
+            🎉 Quiz Completed!<br>Your Score: <strong>${score} / ${quizData.length}</strong> (${((score/quizData.length)*100).toFixed(1)}%)
+        </div>
+        ${reviewHtml}
+    `;
+
+    if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([scoreBoard]);
+    }
+}
+
+function restartQuiz() {
+    currentQ = 0;
+    userAnswers.fill(null);
+    document.getElementById("quiz-body").style.display = "block";
+    document.getElementById("score-board").style.display = "none";
+    document.getElementById("restart-btn").style.display = "none";
+    loadQuestion();
+}
+
+loadQuestion();
+</script>
